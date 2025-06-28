@@ -1,108 +1,102 @@
-Movie Virtual Video Store
-Uma loja virtual de filmes construída com Vue 3, Vuex e PrimeVue, integrando a API do TMDb.
-Permite buscar filmes, adicionar ao carrinho, preencher um checkout com validações e exibir modal de sucesso.
+# 🎬 Movie Virtual Video Store
 
-🛠️ Funcionalidades
-Página Inicial
+Uma loja virtual de filmes construída com **Vue 3**, **Vuex** e **PrimeVue**, integrando a API do TMDb. Permite buscar filmes, adicionar ao carrinho, realizar checkout com validações e exibir modal de sucesso personalizado.
 
-Lista de filmes da API TMDb em grid responsivo
+---
 
-Pesquisa em tempo real por título
+## 🛠️ Funcionalidades
 
-Botão “Adicionar ao Carrinho” e “Favoritar” em cada card
+### Página Inicial
+- Lista de filmes da API TMDb em grid responsivo
+- Pesquisa em tempo real por título
+- Botão “Adicionar ao Carrinho” e “Favoritar” em cada card
 
-Carrinho Lateral
+### Carrinho Lateral
+- Sidebar que exibe itens adicionados
+- Quantidade, preço unitário e subtotal dinâmico
+- Botão “Finalizar Compra” habilitado apenas quando há itens
 
-Sidebar que exibe itens adicionados
+### Página de Checkout
+- Formulário com campos obrigatórios: Nome, CPF, Celular, E-mail, CEP, Endereço, Cidade, Estado
+- **Máscaras:** CPF, Celular, CEP e E-mail
+- **Validação:** Vuelidate
+- Fluxo de cálculo de frete simulado a partir de JSON
+- Modal de sucesso customizado: “Obrigado, <Nome>!”
 
-Quantidade, preço unitário e subtotal dinâmico
+### Favoritos
+- Toggle de favoritos no card de filmes
+- Sidebar “Meus Favoritos” para gerenciar lista
 
-Botão “Finalizar Compra” habilitado apenas quando há itens
+### UX & UI
+- Layout responsivo (mobile → desktop)
+- Sidebars e modal com animações leves (fade-in)
+- Skeleton loaders enquanto a API carrega
 
-Página de Checkout
+---
 
-Formulário com campos obrigatórios: Nome, CPF, Celular, E-mail, CEP, Endereço, Cidade, Estado
+## 🚀 Tecnologias Utilizadas
 
-Máscaras em CPF, Celular e CEP (InputMask)
+- **Framework:** Vue 3 (`<script setup>`)
+- **Gerenciamento de Estado:** Vuex
+- **Roteamento:** Vue Router
+- **Validação:** Vuelidate
+- **UI:** PrimeVue (InputText, InputMask, Button, Dialog, ProgressSpinner…)
+- **HTTP:** Axios
+- **API de Filmes:** [TMDb](https://developers.themoviedb.org/3)
+- **Estilo:** Tailwind CSS + variáveis de tema PrimeVue
 
-Máscara/regra customizada em E-mail (apenas caracteres válidos)
+---
 
-Validação com Vuelidate
+## 📥 Instalação
 
-Fluxo de cálculo de frete simulado a partir de JSON
+1. **Clone o repositório:**
+   ```bash
+   git clone git@github.com:lfelipeapo/movie-virtual-video-store.git
+   cd movie-virtual-video-store
+   ```
 
-Modal de sucesso customizado: “Obrigado, <Nome>!”
+2. **Instale as dependências:**
+   ```bash
+   npm install
+   # ou
+   yarn install
+   ```
 
-Favoritos
+3. **Crie um arquivo `.env` na raiz:**
+   ```
+   VUE_APP_TMDB_API_KEY=seu_api_key_tmdb_aqui
+   ```
 
-Toggle de favoritos no card de filmes
+4. **Inicie em modo desenvolvimento:**
+   ```bash
+   npm run dev
+   # ou
+   yarn dev
+   ```
 
-Sidebar “Meus Favoritos” para gerenciar lista
+5. **Abra no navegador:**  
+   [http://localhost:5173](http://localhost:5173) (ou porta do Vite)
 
-UX & UI
+---
 
-Layout responsivo (mobile → desktop)
+## ⚙️ Scripts Disponíveis
 
-Sidebars e modal com animações leves (fade-in)
+- `npm run dev` — servidor de desenvolvimento
+- `npm run build` — build de produção em `dist/`
+- `npm run lint` — executa ESLint
 
-Skeleton loaders enquanto a API carrega
+---
 
-🚀 Tecnologias
-Framework: Vue 3 + <script setup>
+## 📁 Estrutura do Projeto
 
-State: Vuex
-
-Roteamento: Vue Router
-
-Validação: Vuelidate
-
-UI: PrimeVue (InputText, InputMask, Button, Dialog, ProgressSpinner…)
-
-HTTP: Axios
-
-API Filmes: TMDb (https://developers.themoviedb.org/3)
-
-Estilo: Tailwind CSS + variáveis de tema PrimeVue
-
-📥 Instalação
-Clone o repositório:
-git clone git@github.com:lfelipeapo/movie-virtual-video-store.git
-cd movie-virtual-video-store
-
-Instale as dependências:
-npm install
-ou
-yarn install
-
-Crie um arquivo .env na raiz:
-
-ini
-Copy
-Edit
-VUE_APP_TMDB_API_KEY=seu_api_key_tmdb_aqui
-Inicie em modo desenvolvimento:
-npm run serve
-ou
-yarn serve
-
-Abra no navegador em http://localhost:8080.
-
-⚙️ Scripts disponíveis
-npm run serve — servidor de desenvolvimento
-
-npm run build — build de produção em dist/
-
-npm run lint — executa ESLint
-
-📁 Estrutura do Projeto
-
+```
 src/
 ├── api/
 │   └── tmdb.js            # Cliente Axios para TMDb
 ├── components/
+│   ├── layout/            # Header, Footer, Sidebars
 │   ├── MovieCard.vue      # Card de filme
-│   ├── CartSidebar.vue    # Carrinho lateral
-│   └── FavoritesSidebar.vue
+│   └── ...
 ├── views/
 │   ├── HomeView.vue       # Página inicial
 │   └── CheckoutView.vue   # Página de checkout
@@ -111,18 +105,23 @@ src/
 ├── router/
 │   └── index.js           # Rotas Home ↔ Checkout
 └── assets/
-    └── styles.css         # Estilos globais (Tailwind + overrides)
+    └── logo.svg           # Logo da loja
+```
 
-🤝 Contribuição
-Fork do projeto
+---
 
-Crie uma branch feature: git checkout -b feature/nova-funcionalidade
+## 🤝 Contribuição
 
-Commit suas alterações: git commit -m "feat: descrição"
+1. Faça um fork do projeto
+2. Crie uma branch: `git checkout -b feature/nova-funcionalidade`
+3. Commit suas alterações: `git commit -m "feat: descrição"`
+4. Push na branch: `git push origin feature/nova-funcionalidade`
+5. Abra um Pull Request
 
-Push na branch: git push origin feature/nova-funcionalidade
+---
 
-Abra um Pull Request
+## 📜 Licença
 
-📜 Licença
-Este projeto está licenciado sob a MIT License. Veja o arquivo LICENSE para mais detalhes.
+Este projeto está licenciado sob a MIT License. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+---
