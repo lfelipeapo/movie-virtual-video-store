@@ -1,0 +1,18 @@
+{
+    "frete": [
+        {
+            "ID": "1",
+            "snoServico": "SEDEX",
+            "sValor": "19.90",
+            "sPrazoEntrega": "3 dias",
+            "service_name": "SEDEX"
+        },
+        {
+            "ID": "2",
+            "snoServico": "PAC",
+            "sValor": "14.50",
+            "sPrazoEntrega": "6 dias",
+            "service_name": "PAC"
+        }
+    ]
+}
