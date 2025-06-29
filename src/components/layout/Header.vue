@@ -152,4 +152,30 @@ const toggleTheme = (value) => {
 .logo-link:hover {
   opacity: 0.8;
 }
+
+@media (max-width: 600px) {
+  .app-header {
+    flex-direction: row;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    flex-wrap: wrap;
+  }
+  .logo-link {
+    margin-bottom: 0;
+  }
+  .actions {
+    margin-bottom: 0;
+  }
+  .search-bar {
+    margin: 0.5rem 0 0 0;
+    max-width: 100%;
+    width: 100%;
+    order: 3;
+    flex-basis: 100%;
+  }
+  .logo-image {
+    height: 60px;
+    max-width: 120px;
+  }
+}
 </style> 

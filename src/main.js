@@ -8,7 +8,9 @@ import Tooltip from 'primevue/tooltip';
 import 'primeicons/primeicons.css';
 import 'primeflex/primeflex.css';
 
-// Import local CSS after PrimeVue theme to allow overrides
+//Arquivo de estilo global do projeto
+import './app.css'
+//Arquivo de estilo global do PrimeVue
 import './assets/main.css'
 
 const app = createApp(App)
