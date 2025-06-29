@@ -435,18 +435,14 @@ function onEmailInput(val) {
 }
 
 const nameInput = ref(null)
-onMounted(() => {
-  let interval = setInterval(() => {
-    if (nameInput.value && nameInput.value.$el) {
-      const input = nameInput.value.$el.querySelector('input')
-      if (input) {
-        input.focus()
-        clearInterval(interval)
-      }
+onMounted(async () => {
+  await nextTick()
+  setTimeout(() => {
+    const input = nameInput.value?.$el.querySelector('input')
+    if (input) {
+      input.focus()
     }
   }, 50)
-  // Limpa o intervalo após 2 segundos para evitar loop infinito
-  setTimeout(() => clearInterval(interval), 2000)
 })
 </script>
 
