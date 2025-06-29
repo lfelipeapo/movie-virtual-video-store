@@ -25,6 +25,7 @@
             <label for="name">Nome Completo</label>
             <InputText
               id="name"
+              ref="nameInput"
               v-model="v$.form.name.$model"
               :class="{ 'p-invalid': v$.form.name.$invalid && submitted }"
               class="w-full"
@@ -254,7 +255,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { useVuelidate } from '@vuelidate/core'
@@ -432,6 +433,21 @@ function onEmailInput(val) {
   form.email = clean
   v$.value.form.email.$model = clean
 }
+
+const nameInput = ref(null)
+onMounted(() => {
+  let interval = setInterval(() => {
+    if (nameInput.value && nameInput.value.$el) {
+      const input = nameInput.value.$el.querySelector('input')
+      if (input) {
+        input.focus()
+        clearInterval(interval)
+      }
+    }
+  }, 50)
+  // Limpa o intervalo após 2 segundos para evitar loop infinito
+  setTimeout(() => clearInterval(interval), 2000)
+})
 </script>
 
 <style scoped>
