@@ -1,0 +1,36 @@
+name: Build & Deploy Frontend to GH-Pages
+
+on:
+  push:
+    branches:
+      - main    # dispara em pushes na main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          # pasta que seu build gera (ajuste se for diferente)
+          publish_dir: ./dist
+          # branch onde o Pages vai servir
+          publish_branch: gh-pages
+          # token interno
+          github_token: ${{ secrets.GITHUB_TOKEN }}
