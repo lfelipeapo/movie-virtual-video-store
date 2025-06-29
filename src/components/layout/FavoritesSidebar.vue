@@ -76,4 +76,19 @@ const clearFavorites = () => {
   display: flex;
   flex-direction: row;
 }
+
+:deep(.p-drawer-mask) {
+  animation: fadeInMask 0.3s;
+}
+:deep(.p-drawer) {
+  animation: fadeInDrawer 0.4s cubic-bezier(.4,0,.2,1);
+}
+@keyframes fadeInDrawer {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes fadeInMask {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 </style> 

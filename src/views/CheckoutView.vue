@@ -472,4 +472,19 @@ label {
   font-size: 0.875rem;
   margin-bottom: 0.5rem;
 }
+
+:deep(.p-dialog-mask) {
+  animation: fadeInMask 0.3s;
+}
+:deep(.p-dialog) {
+  animation: fadeInDialog 0.4s cubic-bezier(.4,0,.2,1);
+}
+@keyframes fadeInDialog {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes fadeInMask {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 </style>
