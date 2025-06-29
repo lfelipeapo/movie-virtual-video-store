@@ -1,7 +1,15 @@
 <template>
   <div class="home-view">
-    <div v-if="loading" class="loading-spinner">
-      <i class="pi pi-spin pi-spinner" style="font-size: 2rem"></i>
+    <div v-if="loading" class="movie-grid grid gap-2 md:gap-4">
+      <div v-for="n in 8" :key="n" class="movie-card skeleton-card">
+        <div class="poster-wrapper skeleton-poster"></div>
+        <div class="details">
+          <div class="skeleton skeleton-title"></div>
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton skeleton-text short"></div>
+        </div>
+        <div class="skeleton skeleton-btn"></div>
+      </div>
     </div>
     <div v-else-if="error" class="error-message">
       <p>Ocorreu um erro ao buscar os filmes.</p>
@@ -58,6 +66,50 @@ onMounted(async () => {
 .movie-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+.skeleton-card {
+  background: var(--surface-card);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 350px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.skeleton-poster {
+  width: 100%;
+  height: 220px;
+  background: linear-gradient(90deg, #eee 25%, #f5f5f5 50%, #eee 75%);
+  border-radius: 8px;
+  animation: skeleton-loading 1.2s infinite linear;
+}
+.skeleton {
+  background: linear-gradient(90deg, #eee 25%, #f5f5f5 50%, #eee 75%);
+  border-radius: 4px;
+  animation: skeleton-loading 1.2s infinite linear;
+}
+.skeleton-title {
+  width: 70%;
+  height: 20px;
+  margin-bottom: 0.5rem;
+}
+.skeleton-text {
+  width: 100%;
+  height: 14px;
+  margin-bottom: 0.3rem;
+}
+.skeleton-text.short {
+  width: 50%;
+}
+.skeleton-btn {
+  width: 100%;
+  height: 36px;
+  margin-top: 1rem;
+}
+@keyframes skeleton-loading {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
 }
 .loading-spinner, .error-message {
   display: flex;
