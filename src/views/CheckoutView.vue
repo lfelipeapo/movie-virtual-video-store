@@ -324,7 +324,15 @@ async function fetchAddressAndShipping() {
   }
 
   const rawCep = form.cep.replace(/\D/g, '')
-  if (rawCep.length !== 8) return
+  if (rawCep.length !== 8) {
+    shippingError.value = 'Digite um CEP válido com 8 dígitos.'
+    form.address = ''
+    form.city = ''
+    form.state = ''
+    shippingOptions.value = []
+    selectedShipping.value = null
+    return
+  }
 
   isLoading.value = true
   shippingOptions.value = []
@@ -335,9 +343,12 @@ async function fetchAddressAndShipping() {
   try {
     // Endereço automático
     const { data } = await axios.get(`https://brasilapi.com.br/api/cep/v2/${rawCep}`)
-    form.address = data.street
-    form.city = data.city
-    form.state = data.state
+    if (!data || !data.street) {
+      throw new Error('CEP não encontrado.')
+    }
+    form.address = data.street || ''
+    form.city = data.city || ''
+    form.state = data.state || ''
 
     // Mock de frete
     if (Array.isArray(frete)) {
@@ -351,8 +362,12 @@ async function fetchAddressAndShipping() {
       throw new Error('Nenhuma opção de frete encontrada.')
     }
   } catch (err) {
-    console.error(err)
-    shippingError.value = err.response?.data?.error || err.message
+    form.address = ''
+    form.city = ''
+    form.state = ''
+    shippingOptions.value = []
+    selectedShipping.value = null
+    shippingError.value = err.response?.data?.message || err.message || 'Erro ao buscar CEP.'
   } finally {
     isLoading.value = false
   }
@@ -449,6 +464,7 @@ function onEmailInput(val) {
 .p-error {
   font-size: 0.75rem;
   margin-top: 0.25rem;
+  color: #e53935;
 }
 
 label {
