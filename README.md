@@ -64,7 +64,7 @@ Uma loja virtual de filmes construída com **Vue 3**, **Vuex** e **PrimeVue**, i
 
 3. **Crie um arquivo `.env` na raiz:**
    ```
-   VUE_APP_TMDB_API_KEY=seu_api_key_tmdb_aqui
+   VITE_THEMOVIEDB_API_KEY=seu_api_key_tmdb_aqui
    ```
 
 4. **Inicie em modo desenvolvimento:**
