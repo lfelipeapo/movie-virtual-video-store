@@ -1,3 +1,4 @@
+# .github/workflows/deploy-pages.yml
 name: Deploy Vue.js App to GitHub Pages
 
 on:
@@ -23,13 +24,20 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Inject TMDb key
-        run: echo "VITE_THEMOVIEDB_API_KEY=${{ secrets.VITE_THEMOVIEDB_API_KEY }}" > .env
+      - name: Inject TMDb key into env.production
+        run: |
+          echo "VITE_THEMOVIEDB_API_KEY=${{ secrets.VITE_THEMOVIEDB_API_KEY }}" > .env.production
+
+      - name: Debug env.production
+        run: cat .env.production
 
       - name: Install dependencies
         run: npm ci
 
       - name: Build production bundle
+        # exporta também no ambiente, pra Vite pegar de process.env
+        env:
+          VITE_THEMOVIEDB_API_KEY: ${{ secrets.VITE_THEMOVIEDB_API_KEY }}
         run: npm run build
 
       - name: Configure GitHub Pages
