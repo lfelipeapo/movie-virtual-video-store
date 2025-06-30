@@ -265,6 +265,24 @@ const checkAndLoadMoreForSearch = async () => {
 </script>
 
 <style scoped>
+/* Garantir que o scroll funcione quando sidebar estiver aberta */
+:deep(.p-drawer-mask) {
+  overflow: auto !important;
+}
+
+:deep(.p-drawer) {
+  overflow: auto !important;
+}
+
+/* Manter scroll da página principal */
+body {
+  overflow: auto !important;
+}
+
+html {
+  overflow: auto !important;
+}
+
 .movie-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));

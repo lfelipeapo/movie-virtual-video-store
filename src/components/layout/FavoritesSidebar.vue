@@ -103,6 +103,26 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+/* Garantir que o scroll funcione quando sidebar estiver aberta */
+:deep(.p-drawer-mask) {
+  overflow: auto !important;
+  animation: fadeInMask 0.3s;
+}
+
+:deep(.p-drawer) {
+  overflow: auto !important;
+  animation: fadeInDrawer 0.4s cubic-bezier(.4,0,.2,1);
+}
+
+/* Manter scroll da página principal */
+body {
+  overflow: auto !important;
+}
+
+html {
+  overflow: auto !important;
+}
+
 .empty-favorites {
   height: 100%;
   display: flex;
@@ -114,12 +134,6 @@ onBeforeUnmount(() => {
   flex-direction: row;
 }
 
-:deep(.p-drawer-mask) {
-  animation: fadeInMask 0.3s;
-}
-:deep(.p-drawer) {
-  animation: fadeInDrawer 0.4s cubic-bezier(.4,0,.2,1);
-}
 @keyframes fadeInDrawer {
   from { opacity: 0; transform: translateX(40px); }
   to { opacity: 1; transform: translateX(0); }
