@@ -1,127 +1,133 @@
 # 🎬 Movie Virtual Video Store
 
-Uma loja virtual de filmes construída com **Vue 3**, **Vuex** e **PrimeVue**, integrando a API do TMDb. Permite buscar filmes, adicionar ao carrinho, realizar checkout com validações e exibir modal de sucesso personalizado.
-
----
+Uma loja virtual de filmes construída com Vue 3, Vuex e PrimeVue, integrada à API do TMDb.
+Oferece pesquisa em tempo real, modo escuro, favoritos, carrinho lateral inteligente, checkout validado com máscaras, e uma experiência UX fluida e responsiva.
 
 ## 🛠️ Funcionalidades
 
 ### Página Inicial
-- Lista de filmes da API TMDb em grid responsivo
-- Pesquisa em tempo real por título
-- Botão “Adicionar ao Carrinho” e “Favoritar” em cada card
+- Listagem dinâmica de filmes populares da TMDb
+- Pesquisa com debounce e autocomplete
+- Paginação incremental ("Carregar mais")
+- Filtro por gênero (via API)
+- Skeleton loaders durante carregamento
 
 ### Carrinho Lateral
-- Sidebar que exibe itens adicionados
-- Quantidade, preço unitário e subtotal dinâmico
-- Botão “Finalizar Compra” habilitado apenas quando há itens
+- Barra lateral elegante com controle de quantidade
+- Total dinâmico, preço unitário e subtotal
+- Botão "Finalizar Compra" habilitado somente com itens
 
 ### Página de Checkout
-- Formulário com campos obrigatórios: Nome, CPF, Celular, E-mail, CEP, Endereço, Cidade, Estado
-- **Máscaras:** CPF, Celular, CEP e E-mail
-- **Validação:** Vuelidate
-- Fluxo de cálculo de frete simulado a partir de JSON
-- Modal de sucesso customizado: “Obrigado, <Nome>!”
+Formulário validado com:
+- Nome
+- CPF (com máscara)
+- Celular (com máscara)
+- E-mail (com máscara e validação)
+- CEP (com máscara e busca simulada)
+- Endereço, Cidade e Estado
+- Modal de sucesso com mensagem personalizada:
+  > "Obrigado, Luiz Felipe! Sua compra foi um sucesso."
 
 ### Favoritos
-- Toggle de favoritos no card de filmes
-- Sidebar “Meus Favoritos” para gerenciar lista
+- Toggle de "❤️ Favoritar" em cada card
+- Sidebar separada com filmes favoritos
+- Persistência via localStorage
 
-### UX & UI
-- Layout responsivo (mobile → desktop)
-- Sidebars e modal com animações leves (fade-in)
-- Skeleton loaders enquanto a API carrega
+### Notificações (Toasts)
+- Feedback visual ao adicionar/remover item
+- Componente Toast.vue customizado
+- Fechamento automático
 
----
+### Modo Escuro 🌙☀️
+- Alternância com toggle (salvo no localStorage)
+- Ícones temáticos
+- Suporte completo via Tailwind e PrimeVue Theme
+
+### Página 404
+- Rota /:catchAll(.*)
+- Tela estilizada com mensagem personalizada e botão "Voltar para home"
 
 ## 🚀 Tecnologias Utilizadas
-
 - **Framework:** Vue 3 (`<script setup>`)
-- **Gerenciamento de Estado:** Vuex
-- **Roteamento:** Vue Router
-- **Validação:** Vuelidate
-- **UI:** PrimeVue (InputText, InputMask, Button, Dialog, ProgressSpinner…)
-- **HTTP:** Axios
-- **API de Filmes:** [TMDb](https://developers.themoviedb.org/3)
-- **Estilo:** Tailwind CSS + variáveis de tema PrimeVue
+- **Gerenciamento de Estado:** Vuex com persistência via localStorage
+- **Roteamento:** Vue Router com fallback 404
+- **Validação:** Vuelidate + Máscaras customizadas
+- **UI:** PrimeVue + Tailwind CSS
+- **HTTP:** Axios com camada API (`/api/tmdb.js`)
+- **UX Extra:** Debounce com Lodash, Toast personalizado, Skeletons, Scroll Lock, Animações
+- **API:** TMDb
 
----
+## 📦 Instalação
 
-## 📥 Instalação
+```bash
+git clone https://github.com/lfelipeapo/movie-virtual-video-store.git
+cd movie-virtual-video-store
+npm install
+```
 
-1. **Clone o repositório:**
-   ```bash
-   git clone git@github.com:lfelipeapo/movie-virtual-video-store.git
-   cd movie-virtual-video-store
-   ```
+Crie um arquivo `.env`:
 
-2. **Instale as dependências:**
-   ```bash
-   npm install
-   # ou
-   yarn install
-   ```
+```ini
+VITE_THEMOVIEDB_API_KEY=sua_chave_aqui
+```
 
-3. **Crie um arquivo `.env` na raiz:**
-   ```
-   VITE_THEMOVIEDB_API_KEY=seu_api_key_tmdb_aqui
-   ```
+Inicie o projeto:
 
-4. **Inicie em modo desenvolvimento:**
-   ```bash
-   npm run dev
-   # ou
-   yarn dev
-   ```
+```bash
+npm run dev
+```
 
-5. **Abra no navegador:**  
-   [http://localhost:5173](http://localhost:5173) (ou porta do Vite)
-
----
-
-## ⚙️ Scripts Disponíveis
-
-- `npm run dev` — servidor de desenvolvimento
-- `npm run build` — build de produção em `dist/`
-- `npm run lint` — executa ESLint
-
----
+Acesse: http://localhost:5173
 
 ## 📁 Estrutura do Projeto
 
-```
+```bash
 src/
 ├── api/
-│   └── tmdb.js            # Cliente Axios para TMDb
+│   └── tmdb.js              # Cliente Axios para TMDb (getPopularMovies, getMoviesBySearch, etc)
 ├── components/
-│   ├── layout/            # Header, Footer, Sidebars
-│   ├── MovieCard.vue      # Card de filme
-│   └── ...
+│   ├── layout/              # Header, Footer, Sidebars
+│   ├── MovieCard.vue        # Card individual do filme
+│   └── Toast.vue            # Feedback visual (add/remover item)
 ├── views/
-│   ├── HomeView.vue       # Página inicial
-│   └── CheckoutView.vue   # Página de checkout
+│   ├── HomeView.vue         # Página inicial
+│   ├── CheckoutView.vue     # Página de checkout
+│   └── NotFound.vue         # Página 404 personalizada
 ├── store/
-│   └── index.js           # Vuex: estado do carrinho & favoritos
+│   └── index.js             # Vuex com persistência (cart + favorites)
 ├── router/
-│   └── index.js           # Rotas Home ↔ Checkout
+│   └── index.js             # Roteamento SPA
 └── assets/
-    └── logo.svg           # Logo da loja
+    └── logo.svg             # Logo customizada
 ```
 
----
+## ✅ Implementações Extras (Plus)
+- ✅ Dark Mode persistente
+- ✅ Toasts visuais com mensagens automáticas
+- ✅ Paginação dinâmica de filmes
+- ✅ Pesquisa com debounce + autocomplete
+- ✅ Animações suaves (modal, sidebar)
+- ✅ Filtro por gênero via API
+- ✅ Layout 100% responsivo
+- ✅ 404 personalizada
+- ✅ Código limpo, organizado e modularizado
 
 ## 🤝 Contribuição
 
-1. Faça um fork do projeto
-2. Crie uma branch: `git checkout -b feature/nova-funcionalidade`
-3. Commit suas alterações: `git commit -m "feat: descrição"`
-4. Push na branch: `git push origin feature/nova-funcionalidade`
-5. Abra um Pull Request
+```bash
+# Fork o repositório
+# Crie sua branch:
+git checkout -b feature/nova-feature
 
----
+# Commit:
+git commit -m "feat: nova funcionalidade"
+
+# Push:
+git push origin feature/nova-feature
+```
+Abra um Pull Request com a descrição clara.
 
 ## 📜 Licença
-
-Este projeto está licenciado sob a MIT License. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+MIT © Luiz Felipe Apolinário
 
 ---
