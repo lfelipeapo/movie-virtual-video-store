@@ -27,5 +27,22 @@ export default {
         language: 'pt-BR'
       }
     });
+  },
+  getGenres() {
+    return apiClient.get('/genre/movie/list', {
+      params: {
+        language: 'pt-BR'
+      }
+    });
+  },
+  getMoviesByGenre(genreId, page = 1) {
+    return apiClient.get('/discover/movie', {
+      params: {
+        with_genres: genreId,
+        page,
+        language: 'pt-BR',
+        sort_by: 'popularity.desc'
+      }
+    });
   }
 }; 

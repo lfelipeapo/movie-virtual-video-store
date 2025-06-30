@@ -15,6 +15,24 @@
       <p>Ocorreu um erro ao buscar os filmes.</p>
     </div>
     <div v-else>
+      <!-- Filtros -->
+      <div class="filters-container">
+        <div class="filter-group">
+          <label for="genre-filter" class="filter-label">Gênero:</label>
+          <select 
+            id="genre-filter"
+            v-model="selectedGenre" 
+            @change="filterByGenre"
+            class="genre-select"
+          >
+            <option value="">Todos os gêneros</option>
+            <option v-for="genre in genres" :key="genre.id" :value="genre.id">
+              {{ genre.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+
       <div v-if="filteredMovies.length > 0" class="movie-grid grid gap-2 md:gap-4">
         <MovieCard 
           v-for="(movie, index) in filteredMovies" 
@@ -61,7 +79,7 @@
         <div v-if="!paginationInfo.isSearch && paginationInfo.totalPages > 1" class="pagination-controls">
           <button 
             @click="goToPage(currentPage - 1)" 
-            :disabled="currentPage <= 1 || loadingMore"
+            :disabled="currentPage <= 1"
             class="pagination-btn"
           >
             <i class="pi pi-chevron-left"></i>
@@ -74,7 +92,6 @@
               :key="pageNum"
               @click="goToPage(pageNum)"
               :class="['page-btn', { active: pageNum === currentPage }]"
-              :disabled="loadingMore"
             >
               {{ pageNum }}
             </button>
@@ -82,7 +99,7 @@
           
           <button 
             @click="goToPage(currentPage + 1)" 
-            :disabled="currentPage >= totalPages || loadingMore"
+            :disabled="currentPage >= totalPages"
             class="pagination-btn"
           >
             Próxima
@@ -92,14 +109,6 @@
         
         <div v-else-if="paginationInfo.isSearch && filteredMovies.length === 0" class="no-results">
           <p>Nenhum filme encontrado para "{{ searchQuery }}"</p>
-        </div>
-      </div>
-      
-      <!-- Loading spinner para carregar mais -->
-      <div v-if="loadingMore" class="loading-more">
-        <div class="loading-spinner">
-          <i class="pi pi-spin pi-spinner"></i>
-          <span>Carregando filmes...</span>
         </div>
       </div>
     </div>
@@ -116,11 +125,12 @@ import debounce from "lodash/debounce";
 const store = useStore();
 const allMovies = ref([]);
 const loading = ref(true);
-const loadingMore = ref(false);
 const error = ref(null);
 const currentPage = ref(1);
 const totalPages = ref(0);
 const totalResults = ref(0);
+const genres = ref([]);
+const selectedGenre = ref('');
 
 // Função para gerar chave única para cada filme
 const generateUniqueKey = (movie, index) => {
@@ -135,7 +145,7 @@ const filteredMovies = computed(() => {
 
 // Calcular paginação baseada nos filmes filtrados
 const paginationInfo = computed(() => {
-  if (!searchQuery.value) {
+  if (!searchQuery.value && !selectedGenre.value) {
     return {
       currentPage: currentPage.value,
       totalPages: totalPages.value,
@@ -182,6 +192,8 @@ const loadMovies = async (pageNum = 1) => {
     
     if (searchQuery.value) {
       response = await tmdb.getMoviesBySearch(searchQuery.value, pageNum);
+    } else if (selectedGenre.value) {
+      response = await tmdb.getMoviesByGenre(selectedGenre.value, pageNum);
     } else {
       response = await tmdb.getPopularMovies(pageNum);
     }
@@ -201,21 +213,30 @@ const loadMovies = async (pageNum = 1) => {
 };
 
 const goToPage = async (pageNum) => {
-  if (pageNum < 1 || pageNum > totalPages.value || loadingMore.value) return;
+  if (pageNum < 1 || pageNum > totalPages.value) return;
   
-  loadingMore.value = true;
   currentPage.value = pageNum;
-  
+  await loadMovies(pageNum);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+const loadGenres = async () => {
   try {
-    await loadMovies(pageNum);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  } finally {
-    loadingMore.value = false;
+    const response = await tmdb.getGenres();
+    genres.value = response.data.genres;
+  } catch (err) {
+    console.error('Erro ao carregar gêneros:', err);
   }
+};
+
+const filterByGenre = async () => {
+  currentPage.value = 1;
+  await loadMovies(1);
 };
 
 onMounted(async () => {
   try {
+    await loadGenres();
     await loadMovies(1);
   } finally {
     loading.value = false;
@@ -225,6 +246,14 @@ onMounted(async () => {
 // Reset paginação quando mudar a busca
 watch(searchQuery, async (newQuery, oldQuery) => {
   if (newQuery !== oldQuery) {
+    currentPage.value = 1;
+    await loadMovies(1);
+  }
+});
+
+// Reset paginação quando mudar o gênero
+watch(selectedGenre, async (newGenre, oldGenre) => {
+  if (newGenre !== oldGenre) {
     currentPage.value = 1;
     await loadMovies(1);
   }
@@ -457,23 +486,6 @@ html {
   cursor: not-allowed;
 }
 
-.loading-more {
-  display: flex;
-  justify-content: center;
-  margin-top: 2rem;
-}
-
-.loading-spinner {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--text-color-secondary);
-}
-
-.loading-spinner i {
-  font-size: 1.2rem;
-}
-
 .skeleton-card {
   background: var(--surface-card);
   border-radius: 8px;
@@ -555,6 +567,59 @@ html {
   
   .no-results p {
     font-size: 1rem;
+  }
+}
+
+.filters-container {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: var(--surface-card);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  font-weight: 600;
+  color: var(--text-color);
+  white-space: nowrap;
+}
+
+.genre-select {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 6px;
+  background: var(--surface-ground);
+  color: var(--text-color);
+  font-size: 1rem;
+  min-width: 200px;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.genre-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.genre-select:hover {
+  border-color: var(--surface-hover);
+}
+
+@media (max-width: 768px) {
+  .filter-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .genre-select {
+    min-width: auto;
   }
 }
 </style> 
