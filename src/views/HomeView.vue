@@ -24,13 +24,20 @@
       </div>
       
       <!-- Paginação -->
-      <div v-if="!loading && !error && filteredMovies.length > 0" class="pagination-container">
+      <div v-if="!loading && !error && paginationInfo.showPagination" class="pagination-container">
         <div class="pagination-info">
-          <span>Página {{ currentPage }} de {{ totalPages }}</span>
-          <span>{{ totalResults }} filmes encontrados</span>
+          <span v-if="paginationInfo.isSearch">
+            {{ paginationInfo.totalResults }} {{ paginationInfo.totalResults === 1 ? 'filme encontrado' : 'filmes encontrados' }} para "{{ searchQuery }}"
+          </span>
+          <span v-else>
+            Página {{ paginationInfo.currentPage }} de {{ paginationInfo.totalPages }}
+          </span>
+          <span v-if="!paginationInfo.isSearch">
+            {{ paginationInfo.totalResults }} filmes no total
+          </span>
         </div>
         
-        <div class="pagination-controls">
+        <div v-if="!paginationInfo.isSearch && paginationInfo.totalPages > 1" class="pagination-controls">
           <button 
             @click="goToPage(currentPage - 1)" 
             :disabled="currentPage <= 1 || loadingMore"
@@ -60,6 +67,10 @@
             Próxima
             <i class="pi pi-chevron-right"></i>
           </button>
+        </div>
+        
+        <div v-else-if="paginationInfo.isSearch && filteredMovies.length === 0" class="no-results">
+          <p>Nenhum filme encontrado para "{{ searchQuery }}"</p>
         </div>
       </div>
       
@@ -100,12 +111,41 @@ const filteredMovies = computed(() => {
   );
 });
 
+// Calcular paginação baseada nos filmes filtrados
+const paginationInfo = computed(() => {
+  const filteredCount = filteredMovies.value.length;
+  
+  if (!searchQuery.value) {
+    // Sem pesquisa: usar dados da API
+    return {
+      currentPage: currentPage.value,
+      totalPages: totalPages.value,
+      totalResults: totalResults.value,
+      showPagination: true,
+      isSearch: false
+    };
+  } else {
+    // Com pesquisa: mostrar apenas contagem dos resultados filtrados
+    return {
+      currentPage: 1,
+      totalPages: 1,
+      totalResults: filteredCount,
+      showPagination: filteredCount > 0,
+      isSearch: true
+    };
+  }
+});
+
 // Calcular páginas visíveis na paginação
 const visiblePages = computed(() => {
   const pages = [];
   const maxVisible = 5;
-  let start = Math.max(1, currentPage.value - Math.floor(maxVisible / 2));
-  let end = Math.min(totalPages.value, start + maxVisible - 1);
+  const totalPages = paginationInfo.value.totalPages;
+  
+  if (totalPages <= 1) return [];
+  
+  let start = Math.max(1, paginationInfo.value.currentPage - Math.floor(maxVisible / 2));
+  let end = Math.min(totalPages, start + maxVisible - 1);
   
   if (end - start + 1 < maxVisible) {
     start = Math.max(1, end - maxVisible + 1);
@@ -159,11 +199,59 @@ onMounted(async () => {
 });
 
 // Reset paginação quando mudar a busca
-watch(searchQuery, () => {
-  if (searchQuery.value) {
-    currentPage.value = 1;
+watch(searchQuery, async (newQuery, oldQuery) => {
+  if (newQuery && newQuery !== oldQuery) {
+    // Verificar e carregar mais filmes se necessário para a pesquisa
+    await checkAndLoadMoreForSearch();
   }
 });
+
+// Função para carregar mais filmes
+const loadMoreMovies = async () => {
+  if (loadingMore.value || currentPage.value >= totalPages.value) return;
+  
+  loadingMore.value = true;
+  currentPage.value++;
+  
+  try {
+    const response = await tmdb.getPopularMovies(currentPage.value);
+    const newMovies = response.data.results.map(movie => ({
+      ...movie,
+      price: parseFloat((Math.random() * (89.99 - 19.99) + 19.99).toFixed(2))
+    }));
+    
+    // Adicionar novos filmes aos existentes
+    allMovies.value = [...allMovies.value, ...newMovies];
+  } catch (err) {
+    console.error(err);
+    error.value = err;
+  } finally {
+    loadingMore.value = false;
+  }
+};
+
+// Função para verificar se precisamos carregar mais filmes para a pesquisa
+const checkAndLoadMoreForSearch = async () => {
+  if (!searchQuery.value) return;
+  
+  const filteredCount = filteredMovies.value.length;
+  
+  // Se temos poucos resultados e ainda há páginas para carregar
+  if (filteredCount < 5 && currentPage.value < totalPages.value) {
+    await loadMoreMovies();
+    
+    // Verificar novamente após carregar
+    setTimeout(() => {
+      const newFilteredCount = filteredMovies.value.filter(movie =>
+        movie.title.toLowerCase().includes(searchQuery.value.toLowerCase())
+      ).length;
+      
+      if (newFilteredCount < 5 && currentPage.value < totalPages.value) {
+        loadMoreMovies();
+      }
+    }, 300);
+  }
+};
 </script>
 
 <style scoped>
@@ -186,6 +274,17 @@ watch(searchQuery, () => {
   gap: 2rem;
   color: var(--text-color-secondary);
   font-size: 0.9rem;
+}
+
+.no-results {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-color-secondary);
+}
+
+.no-results p {
+  font-size: 1.1rem;
+  margin: 0;
 }
 
 .pagination-controls {
