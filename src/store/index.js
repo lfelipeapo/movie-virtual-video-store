@@ -10,6 +10,9 @@ export default createStore({
     SET_SEARCH_QUERY(state, query) {
       state.searchQuery = query;
     },
+    CLEAR_SEARCH(state) {
+      state.searchQuery = '';
+    },
     ADD_TO_CART(state, movie) {
       const cartItem = state.cartItems.find(item => item.id === movie.id);
       if (cartItem) {
@@ -50,6 +53,9 @@ export default createStore({
   actions: {
     updateSearchQuery({ commit }, query) {
       commit('SET_SEARCH_QUERY', query);
+    },
+    clearSearch({ commit }) {
+      commit('CLEAR_SEARCH');
     },
     addToCart({ commit }, movie) {
       commit('ADD_TO_CART', movie);

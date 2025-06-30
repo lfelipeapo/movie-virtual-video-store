@@ -25,7 +25,23 @@
       
       <!-- Mensagem quando não há resultados na pesquisa -->
       <div v-else-if="searchQuery && searchQuery.length > 0" class="no-results">
-        <p>Nenhum resultado encontrado para "{{ searchQuery }}"</p>
+        <div class="no-results-content">
+          <div class="no-results-icon">🔍</div>
+          <h3>Nenhum filme encontrado</h3>
+          <p>Não encontramos filmes para "{{ searchQuery }}"</p>
+          <div class="no-results-suggestions">
+            <p>Tente:</p>
+            <ul>
+              <li>Verificar a ortografia</li>
+              <li>Usar termos mais gerais</li>
+              <li>Procurar por gênero ou ano</li>
+            </ul>
+          </div>
+          <button @click="clearSearch" class="clear-search-btn" type="button">
+            <i class="pi pi-times"></i>
+            Limpar pesquisa
+          </button>
+        </div>
       </div>
       
       <!-- Paginação -->
@@ -214,6 +230,11 @@ watch(searchQuery, async (newQuery, oldQuery) => {
   }
 });
 
+const clearSearch = async () => {
+  store.dispatch('clearSearch');
+  currentPage.value = 1;
+  await loadMovies(1);
+};
 
 </script>
 
@@ -273,13 +294,106 @@ html {
 
 .no-results {
   text-align: center;
-  padding: 2rem;
+  padding: 3rem 1rem;
   color: var(--text-color-secondary);
+}
+
+.no-results-content {
+  max-width: 500px;
+  margin: 0 auto;
+  background: var(--surface-card);
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.no-results-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+.no-results h3 {
+  color: var(--text-color);
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
 }
 
 .no-results p {
   font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.no-results-suggestions {
+  text-align: left;
+  margin-bottom: 2rem;
+}
+
+.no-results-suggestions p {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-color);
+}
+
+.no-results-suggestions ul {
+  list-style: none;
+  padding: 0;
   margin: 0;
+}
+
+.no-results-suggestions li {
+  padding: 0.25rem 0;
+  color: var(--text-color-secondary);
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.no-results-suggestions li::before {
+  content: "•";
+  color: var(--primary-color);
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+}
+
+.clear-search-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  text-decoration: none;
+  font-size: 1rem;
+  min-height: 44px;
+  user-select: none;
+  outline: none;
+}
+
+.clear-search-btn:hover {
+  background: #0056b3;
+}
+
+.clear-search-btn:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.clear-search-btn:active {
+  transform: scale(0.98);
+}
+
+.clear-search-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .pagination-controls {
@@ -425,6 +539,22 @@ html {
     flex-direction: column;
     gap: 0.5rem;
     text-align: center;
+  }
+  
+  .no-results {
+    padding: 2rem 1rem;
+  }
+  
+  .no-results-content {
+    padding: 1.5rem;
+  }
+  
+  .no-results h3 {
+    font-size: 1.25rem;
+  }
+  
+  .no-results p {
+    font-size: 1rem;
   }
 }
 </style> 
