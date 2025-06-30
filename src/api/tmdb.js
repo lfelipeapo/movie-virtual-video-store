@@ -11,8 +11,20 @@ const apiClient = axios.create({
 export default {
   getPopularMovies(page = 1) {
     return apiClient.get('/movie/popular', {
-      params: { 
-        page
+      params: {
+        page,
+        include_adult: false,
+        language: 'pt-BR'
+      }
+    });
+  },
+  getMoviesBySearch(query, page = 1) {
+    return apiClient.get('/search/movie', {
+      params: {
+        query,
+        page,
+        include_adult: false,
+        language: 'pt-BR'
       }
     });
   }

@@ -15,12 +15,17 @@
       <p>Ocorreu um erro ao buscar os filmes.</p>
     </div>
     <div v-else>
-      <div class="movie-grid grid gap-2 md:gap-4">
+      <div v-if="filteredMovies.length > 0" class="movie-grid grid gap-2 md:gap-4">
         <MovieCard 
           v-for="(movie, index) in filteredMovies" 
           :key="generateUniqueKey(movie, index)" 
           :movie="movie" 
         />
+      </div>
+      
+      <!-- Mensagem quando não há resultados na pesquisa -->
+      <div v-else-if="searchQuery && searchQuery.length > 0" class="no-results">
+        <p>Nenhum resultado encontrado para "{{ searchQuery }}"</p>
       </div>
       
       <!-- Paginação -->
@@ -90,6 +95,7 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { useStore } from 'vuex';
 import MovieCard from '../components/MovieCard.vue';
 import tmdb from '../api/tmdb';
+import debounce from "lodash/debounce";
 
 const store = useStore();
 const allMovies = ref([]);
@@ -108,20 +114,12 @@ const generateUniqueKey = (movie, index) => {
 const searchQuery = computed(() => store.state.searchQuery);
 
 const filteredMovies = computed(() => {
-  if (!searchQuery.value) {
-    return allMovies.value;
-  }
-  return allMovies.value.filter(movie =>
-    movie.title.toLowerCase().includes(searchQuery.value.toLowerCase())
-  );
+  return allMovies.value;
 });
 
 // Calcular paginação baseada nos filmes filtrados
 const paginationInfo = computed(() => {
-  const filteredCount = filteredMovies.value.length;
-  
   if (!searchQuery.value) {
-    // Sem pesquisa: usar dados da API
     return {
       currentPage: currentPage.value,
       totalPages: totalPages.value,
@@ -130,12 +128,11 @@ const paginationInfo = computed(() => {
       isSearch: false
     };
   } else {
-    // Com pesquisa: mostrar apenas contagem dos resultados filtrados
     return {
-      currentPage: 1,
-      totalPages: 1,
-      totalResults: filteredCount,
-      showPagination: filteredCount > 0,
+      currentPage: currentPage.value,
+      totalPages: totalPages.value,
+      totalResults: totalResults.value,
+      showPagination: true,
       isSearch: true
     };
   }
@@ -165,18 +162,24 @@ const visiblePages = computed(() => {
 
 const loadMovies = async (pageNum = 1) => {
   try {
-    const response = await tmdb.getPopularMovies(pageNum); 
+    let response;
+    
+    if (searchQuery.value) {
+      response = await tmdb.getMoviesBySearch(searchQuery.value, pageNum);
+    } else {
+      response = await tmdb.getPopularMovies(pageNum);
+    }
+    
     const newMovies = response.data.results.map(movie => ({
       ...movie,
       price: parseFloat((Math.random() * (89.99 - 19.99) + 19.99).toFixed(2))
     }));
     
-    // Para nova página, substituir completamente os filmes
     allMovies.value = newMovies;
     totalPages.value = response.data.total_pages;
     totalResults.value = response.data.total_results;
   } catch (err) {
-    console.error(err);
+    console.error('Erro ao carregar filmes:', err);
     error.value = err;
   }
 };
@@ -189,7 +192,6 @@ const goToPage = async (pageNum) => {
   
   try {
     await loadMovies(pageNum);
-    // Scroll para o topo
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } finally {
     loadingMore.value = false;
@@ -206,62 +208,13 @@ onMounted(async () => {
 
 // Reset paginação quando mudar a busca
 watch(searchQuery, async (newQuery, oldQuery) => {
-  if (newQuery && newQuery !== oldQuery) {
-    // Verificar e carregar mais filmes se necessário para a pesquisa
-    await checkAndLoadMoreForSearch();
+  if (newQuery !== oldQuery) {
+    currentPage.value = 1;
+    await loadMovies(1);
   }
 });
 
-// Função para carregar mais filmes
-const loadMoreMovies = async () => {
-  if (loadingMore.value || currentPage.value >= totalPages.value) return;
-  
-  loadingMore.value = true;
-  currentPage.value++;
-  
-  try {
-    const response = await tmdb.getPopularMovies(currentPage.value); 
-    const newMovies = response.data.results.map(movie => ({
-      ...movie,
-      price: parseFloat((Math.random() * (89.99 - 19.99) + 19.99).toFixed(2))
-    }));
-    
-    // Filtrar filmes duplicados antes de adicionar
-    const existingIds = new Set(allMovies.value.map(movie => movie.id));
-    const uniqueNewMovies = newMovies.filter(movie => !existingIds.has(movie.id));
-    
-    // Adicionar apenas filmes únicos aos existentes
-    allMovies.value = [...allMovies.value, ...uniqueNewMovies];
-  } catch (err) {
-    console.error(err);
-    error.value = err;
-  } finally {
-    loadingMore.value = false;
-  }
-};
 
-// Função para verificar se precisamos carregar mais filmes para a pesquisa
-const checkAndLoadMoreForSearch = async () => {
-  if (!searchQuery.value) return;
-  
-  const filteredCount = filteredMovies.value.length;
-  
-  // Se temos poucos resultados e ainda há páginas para carregar
-  if (filteredCount < 20 && currentPage.value < totalPages.value) {
-    await loadMoreMovies();
-    
-    // Verificar novamente após carregar
-    setTimeout(() => {
-      const newFilteredCount = filteredMovies.value.filter(movie =>
-        movie.title.toLowerCase().includes(searchQuery.value.toLowerCase())
-      ).length;
-      
-      if (newFilteredCount < 20 && currentPage.value < totalPages.value) {
-        loadMoreMovies();
-      }
-    }, 300);
-  }
-};
 </script>
 
 <style scoped>

@@ -7,6 +7,8 @@ import Badge from 'primevue/badge';
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
 import logoImage from '@/assets/logo.svg';
+import debounce from "lodash/debounce";
+import tmdbApi from "@/api/tmdb";
 
 const store = useStore();
 const emit = defineEmits(['open-cart', 'open-favorites']);
@@ -15,10 +17,38 @@ const cartItemCount = computed(() => store.getters.cartItemCount);
 const favoriteItemCount = computed(() => store.getters.favoriteCount);
 const isDark = ref(localStorage.getItem('theme') === 'dark');
 const searchQuery = ref('');
+const searchResults = ref([]);
+
+const searchMovies = debounce(async (query) => {
+  if (!query || query.trim().length < 2) {
+    searchResults.value = [];
+    return;
+  }
+
+  try {
+    const response = await tmdbApi.getMoviesBySearch(query);
+    searchResults.value = response.data.results.slice(0, 5);
+  } catch (err) {
+    console.error("Erro ao buscar filmes:", err);
+    searchResults.value = [];
+  }
+}, 300);
 
 watch(searchQuery, (newQuery) => {
   store.dispatch('updateSearchQuery', newQuery);
+  searchMovies(newQuery);
 });
+
+const selectMovie = (movie) => {
+  searchQuery.value = movie.title;
+  searchResults.value = [];
+};
+
+const closeSearchResults = () => {
+  setTimeout(() => {
+    searchResults.value = [];
+  }, 150);
+};
 
 const toggleTheme = () => {
   isDark.value = !isDark.value;
@@ -27,7 +57,6 @@ const toggleTheme = () => {
 };
 
 onMounted(() => {
-  // Aplicar tema inicial
   document.documentElement.classList.toggle('dark-mode', isDark.value);
 });
 
@@ -41,10 +70,30 @@ onMounted(() => {
       </div>
     </RouterLink>
     <div class="search-bar flex-grow-1 mx-3">
-      <IconField iconPosition="right" class="w-full">
-        <InputText v-model="searchQuery" placeholder="Pesquisa" class="w-full border-round" />
-        <InputIcon class="pi pi-search"></InputIcon>
-      </IconField>
+      <div class="search-container">
+        <IconField iconPosition="right" class="w-full">
+          <InputText 
+            v-model="searchQuery" 
+            placeholder="Pesquisa" 
+            class="w-full border-round" 
+            @blur="closeSearchResults"
+          />
+          <InputIcon class="pi pi-search"></InputIcon>
+        </IconField>
+        
+        <!-- Autocomplete Results -->
+        <div v-if="searchResults.length > 0" class="search-results">
+          <div 
+            v-for="movie in searchResults" 
+            :key="movie.id" 
+            class="search-result-item"
+            @click="selectMovie(movie)"
+          >
+            <div class="movie-title">{{ movie.title }}</div>
+            <div class="movie-year">{{ new Date(movie.release_date).getFullYear() }}</div>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="actions flex align-items-center gap-3">
       <div class="action-item" v-tooltip.bottom="`Mudar para modo ${isDark ? 'claro' : 'escuro'}`">
@@ -114,6 +163,11 @@ onMounted(() => {
   margin: 0 2rem;
 }
 
+.search-container {
+  position: relative;
+  width: 100%;
+}
+
 .search-bar .p-input-icon-right {
     width: 100%;
 }
@@ -121,6 +175,53 @@ onMounted(() => {
 .search-bar .p-inputtext {
     width: 100%;
     border-radius: 20px;
+}
+
+.search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-top: 2px;
+}
+
+.search-result-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--surface-border);
+  transition: background-color 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.search-result-item:hover {
+  background: var(--surface-hover);
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+  border-radius: 0 0 12px 12px;
+}
+
+.movie-title {
+  font-weight: 500;
+  color: var(--text-color);
+  flex: 1;
+}
+
+.movie-year {
+  font-size: 0.875rem;
+  color: var(--text-color-secondary);
+  margin-left: 1rem;
 }
 
 .actions {
