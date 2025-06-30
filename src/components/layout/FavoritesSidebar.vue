@@ -1,10 +1,10 @@
 <template>
   <!-- eslint-disable-next-line vue/no-v-model-argument -->
-  <Drawer v-model:visible="isVisible" position="right" class="w-full md:w-30rem">
+  <Drawer ref="sidebar" v-model:visible="isVisible" position="right" class="w-full md:w-30rem">
     <template #header>
         <div class="flex justify-content-between align-items-center w-full">
             <span class="font-bold text-lg">Meus Favoritos</span>
-            <Button label="Esvaziar" link @click="clearFavorites" class="p-0"></Button>
+            <Button label="Esvaziar" link @click="clearFavorites" class="p-0 mr-2"></Button>
         </div>
     </template>
 
@@ -30,7 +30,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { useStore } from 'vuex';
 import Drawer from 'primevue/drawer';
 import Button from 'primevue/button';
@@ -43,6 +43,7 @@ const props = defineProps({
 const emit = defineEmits(['update:visible']);
 
 const store = useStore();
+const sidebar = ref(null);
 
 const isVisible = computed({
   get: () => props.visible,
@@ -61,8 +62,44 @@ const toggleFavorite = (movie) => {
 
 const clearFavorites = () => {
     store.dispatch('clearFavorites');
-}
+};
 
+const closeSidebar = () => {
+  isVisible.value = false;
+};
+
+const handleClickOutside = (e) => {
+  // Não fechar se o clique vier dos botões do header
+  if (e.target.closest('.action-item') || e.target.closest('.action-icon-container')) {
+    return;
+  }
+  
+  // Não fechar se o clique for dentro da sidebar (qualquer parte)
+  if (sidebar.value && sidebar.value.$el.contains(e.target)) {
+    return;
+  }
+  
+  // Só fechar se clicar no overlay/mask (fora da sidebar)
+  if (e.target.classList.contains('p-drawer-mask') || e.target.classList.contains('p-component-overlay')) {
+    closeSidebar();
+  }
+};
+
+const handleEscape = (e) => {
+  if (e.key === 'Escape') {
+    closeSidebar();
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+  window.addEventListener('keydown', handleEscape);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside);
+  window.removeEventListener('keydown', handleEscape);
+});
 </script>
 
 <style scoped>
