@@ -22,12 +22,21 @@
     >
       Adicionar
     </button>
+    
+    <!-- Toast de feedback -->
+    <Toast 
+      v-if="showToast" 
+      :message="toastMessage" 
+      :type="toastType"
+      @close="showToast = false"
+    />
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useStore } from 'vuex';
+import Toast from './Toast.vue';
 
 const store = useStore();
 
@@ -37,6 +46,10 @@ const props = defineProps({
     required: true
   }
 });
+
+const showToast = ref(false);
+const toastMessage = ref('');
+const toastType = ref('success');
 
 const posterUrl = computed(() => {
   return props.movie.poster_path
@@ -56,12 +69,25 @@ const releaseDate = computed(() => {
 
 const isMovieFavorite = computed(() => store.getters.isFavorite(props.movie.id));
 
+const showToastMessage = (message, type = 'success') => {
+  toastMessage.value = message;
+  toastType.value = type;
+  showToast.value = true;
+};
+
 const addToCart = () => {
   store.dispatch('addToCart', props.movie);
+  showToastMessage('Adicionado ao carrinho!', 'success');
 };
 
 const toggleFavorite = () => {
   store.dispatch('toggleFavorite', props.movie);
+  const isFavorite = store.getters.isFavorite(props.movie.id);
+  if (isFavorite) {
+    showToastMessage('Adicionado aos favoritos!', 'success');
+  } else {
+    showToastMessage('Removido dos favoritos!', 'info');
+  }
 };
 </script>
 

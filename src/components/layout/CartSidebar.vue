@@ -37,6 +37,14 @@
         </router-link>
       </div>
     </div>
+    
+    <!-- Toast de feedback -->
+    <Toast 
+      v-if="showToast" 
+      :message="toastMessage" 
+      :type="toastType"
+      @close="showToast = false"
+    />
   </Drawer>
 </template>
 
@@ -45,6 +53,7 @@ import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { useStore } from 'vuex';
 import Drawer from 'primevue/drawer';
 import Button from 'primevue/button';
+import Toast from '../Toast.vue';
 
 const props = defineProps({
   visible: Boolean
@@ -55,6 +64,10 @@ const emit = defineEmits(['update:visible']);
 const store = useStore();
 const sidebar = ref(null);
 
+const showToast = ref(false);
+const toastMessage = ref('');
+const toastType = ref('success');
+
 const isVisible = computed({
   get: () => props.visible,
   set: (value) => emit('update:visible', value)
@@ -63,12 +76,21 @@ const isVisible = computed({
 const cartItems = computed(() => store.state.cartItems);
 const cartTotal = computed(() => store.getters.cartTotal);
 
+const showToastMessage = (message, type = 'success') => {
+  toastMessage.value = message;
+  toastType.value = type;
+  showToast.value = true;
+};
+
 const removeFromCart = (movieId) => {
+  const item = cartItems.value.find(item => item.id === movieId);
   store.dispatch('removeFromCart', movieId);
+  showToastMessage(`"${item.title}" removido do carrinho!`, 'info');
 };
 
 const clearCart = () => {
   store.dispatch('clearCart');
+  showToastMessage('Carrinho esvaziado!', 'warning');
 };
 
 const closeSidebar = () => {

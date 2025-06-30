@@ -26,6 +26,14 @@
         </div>
       </div>
     </div>
+    
+    <!-- Toast de feedback -->
+    <Toast 
+      v-if="showToast" 
+      :message="toastMessage" 
+      :type="toastType"
+      @close="showToast = false"
+    />
   </Drawer>
 </template>
 
@@ -34,7 +42,7 @@ import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { useStore } from 'vuex';
 import Drawer from 'primevue/drawer';
 import Button from 'primevue/button';
-import Tooltip from 'primevue/tooltip';
+import Toast from '../Toast.vue';
 
 const props = defineProps({
   visible: Boolean
@@ -45,6 +53,10 @@ const emit = defineEmits(['update:visible']);
 const store = useStore();
 const sidebar = ref(null);
 
+const showToast = ref(false);
+const toastMessage = ref('');
+const toastType = ref('success');
+
 const isVisible = computed({
   get: () => props.visible,
   set: (value) => emit('update:visible', value)
@@ -52,16 +64,25 @@ const isVisible = computed({
 
 const favoriteItems = computed(() => store.state.favoriteItems);
 
+const showToastMessage = (message, type = 'success') => {
+  toastMessage.value = message;
+  toastType.value = type;
+  showToast.value = true;
+};
+
 const addToCart = (movie) => {
   store.dispatch('addToCart', movie);
+  showToastMessage(`"${movie.title}" adicionado ao carrinho!`, 'success');
 };
 
 const toggleFavorite = (movie) => {
   store.dispatch('toggleFavorite', movie);
+  showToastMessage(`"${movie.title}" removido dos favoritos!`, 'info');
 };
 
 const clearFavorites = () => {
     store.dispatch('clearFavorites');
+    showToastMessage('Lista de favoritos esvaziada!', 'warning');
 };
 
 const closeSidebar = () => {
