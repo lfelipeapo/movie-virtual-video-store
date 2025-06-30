@@ -18,18 +18,59 @@
       <!-- Filtros -->
       <div class="filters-container">
         <div class="filter-group">
-          <label for="genre-filter" class="filter-label">Gênero:</label>
-          <select 
-            id="genre-filter"
-            v-model="selectedGenre" 
-            @change="filterByGenre"
-            class="genre-select"
-          >
-            <option value="">Todos os gêneros</option>
-            <option v-for="genre in genres" :key="genre.id" :value="genre.id">
-              {{ genre.name }}
-            </option>
-          </select>
+          <div class="filter-item">
+            <label for="genre-filter" class="filter-label">Gênero:</label>
+            <select 
+              id="genre-filter"
+              v-model="selectedGenre" 
+              @change="applyFilters"
+              class="genre-select"
+            >
+              <option value="">Todos os gêneros</option>
+              <option v-for="genre in genres" :key="genre.id" :value="genre.id">
+                {{ genre.name }}
+              </option>
+            </select>
+          </div>
+          
+          <div class="filter-item">
+            <label for="year-filter" class="filter-label">Ano:</label>
+            <select 
+              id="year-filter"
+              v-model="selectedYear" 
+              @change="applyFilters"
+              class="year-select"
+            >
+              <option value="">Todos os anos</option>
+              <option v-for="year in availableYears" :key="year" :value="year">
+                {{ year }}
+              </option>
+            </select>
+          </div>
+          
+          <div class="filter-item">
+            <label for="rating-filter" class="filter-label">Nota mínima:</label>
+            <select 
+              id="rating-filter"
+              v-model="selectedRating" 
+              @change="applyFilters"
+              class="rating-select"
+            >
+              <option value="">Qualquer nota</option>
+              <option value="9">9+ (Excelente)</option>
+              <option value="8">8+ (Muito bom)</option>
+              <option value="7">7+ (Bom)</option>
+              <option value="6">6+ (Regular)</option>
+              <option value="5">5+ (Aceitável)</option>
+            </select>
+          </div>
+          
+          <div class="filter-item">
+            <button @click="clearFilters" class="clear-filters-btn" type="button">
+              <i class="pi pi-times"></i>
+              Limpar filtros
+            </button>
+          </div>
         </div>
       </div>
 
@@ -131,6 +172,18 @@ const totalPages = ref(0);
 const totalResults = ref(0);
 const genres = ref([]);
 const selectedGenre = ref('');
+const selectedYear = ref('');
+const selectedRating = ref('');
+
+// Anos disponíveis para filtro (últimos 30 anos)
+const availableYears = computed(() => {
+  const currentYear = new Date().getFullYear();
+  const years = [];
+  for (let year = currentYear; year >= currentYear - 30; year--) {
+    years.push(year);
+  }
+  return years;
+});
 
 // Função para gerar chave única para cada filme
 const generateUniqueKey = (movie, index) => {
@@ -145,7 +198,7 @@ const filteredMovies = computed(() => {
 
 // Calcular paginação baseada nos filmes filtrados
 const paginationInfo = computed(() => {
-  if (!searchQuery.value && !selectedGenre.value) {
+  if (!searchQuery.value && !selectedGenre.value && !selectedYear.value && !selectedRating.value) {
     return {
       currentPage: currentPage.value,
       totalPages: totalPages.value,
@@ -192,8 +245,13 @@ const loadMovies = async (pageNum = 1) => {
     
     if (searchQuery.value) {
       response = await tmdb.getMoviesBySearch(searchQuery.value, pageNum);
-    } else if (selectedGenre.value) {
-      response = await tmdb.getMoviesByGenre(selectedGenre.value, pageNum);
+    } else if (selectedGenre.value || selectedYear.value || selectedRating.value) {
+      response = await tmdb.getMoviesByGenre(
+        selectedGenre.value || '', 
+        pageNum, 
+        selectedYear.value || null, 
+        selectedRating.value || null
+      );
     } else {
       response = await tmdb.getPopularMovies(pageNum);
     }
@@ -229,7 +287,7 @@ const loadGenres = async () => {
   }
 };
 
-const filterByGenre = async () => {
+const applyFilters = async () => {
   currentPage.value = 1;
   await loadMovies(1);
 };
@@ -259,8 +317,32 @@ watch(selectedGenre, async (newGenre, oldGenre) => {
   }
 });
 
+// Reset paginação quando mudar o ano
+watch(selectedYear, async (newYear, oldYear) => {
+  if (newYear !== oldYear) {
+    currentPage.value = 1;
+    await loadMovies(1);
+  }
+});
+
+// Reset paginação quando mudar a nota
+watch(selectedRating, async (newRating, oldRating) => {
+  if (newRating !== oldRating) {
+    currentPage.value = 1;
+    await loadMovies(1);
+  }
+});
+
 const clearSearch = async () => {
   store.dispatch('clearSearch');
+  currentPage.value = 1;
+  await loadMovies(1);
+};
+
+const clearFilters = async () => {
+  selectedGenre.value = '';
+  selectedYear.value = '';
+  selectedRating.value = '';
   currentPage.value = 1;
   await loadMovies(1);
 };
@@ -580,15 +662,29 @@ html {
 
 .filter-group {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 1rem;
   flex-wrap: wrap;
+}
+
+.filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .filter-label {
   font-weight: 600;
   color: var(--text-color);
   white-space: nowrap;
+  font-size: 0.9rem;
+}
+
+.genre-select,
+.year-select,
+.rating-select {
+  height: 40px;
+  box-sizing: border-box;
 }
 
 .genre-select {
@@ -612,14 +708,95 @@ html {
   border-color: var(--surface-hover);
 }
 
+.year-select {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 6px;
+  background: var(--surface-ground);
+  color: var(--text-color);
+  font-size: 1rem;
+  min-width: 100px;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.year-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.year-select:hover {
+  border-color: var(--surface-hover);
+}
+
+.rating-select {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 6px;
+  background: var(--surface-ground);
+  color: var(--text-color);
+  font-size: 1rem;
+  min-width: 150px;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.rating-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.rating-select:hover {
+  border-color: var(--surface-hover);
+}
+
+.clear-filters-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  height: 40px;
+  padding: 0 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  text-decoration: none;
+  font-size: 1rem;
+  margin-top: 0;
+  box-sizing: border-box;
+}
+
+.clear-filters-btn:hover {
+  background: #0056b3;
+}
+
+.clear-filters-btn:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.clear-filters-btn:active {
+  transform: scale(0.98);
+}
+
+.clear-filters-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
   .filter-group {
     flex-direction: column;
     align-items: stretch;
   }
-  
-  .genre-select {
-    min-width: auto;
+  .clear-filters-btn {
+    width: 100%;
+    margin-top: 1rem;
+    height: auto;
   }
 }
 </style> 
