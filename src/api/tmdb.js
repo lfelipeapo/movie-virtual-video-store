@@ -9,7 +9,9 @@ const apiClient = axios.create({
 });
 
 export default {
-  getPopularMovies() {
-    return apiClient.get('/movie/popular');
+  getPopularMovies(page = 1) {
+    return apiClient.get('/movie/popular', {
+      params: { page }
+    });
   }
 }; 

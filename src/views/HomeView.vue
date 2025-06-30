@@ -1,6 +1,6 @@
 <template>
   <div class="home-view">
-    <div v-if="loading" class="movie-grid grid gap-2 md:gap-4">
+    <div v-if="loading && allMovies.length === 0" class="movie-grid grid gap-2 md:gap-4">
       <div v-for="n in 8" :key="n" class="movie-card skeleton-card">
         <div class="poster-wrapper skeleton-poster"></div>
         <div class="details">
@@ -14,18 +14,68 @@
     <div v-else-if="error" class="error-message">
       <p>Ocorreu um erro ao buscar os filmes.</p>
     </div>
-    <div v-else class="movie-grid grid gap-2 md:gap-4">
-      <MovieCard 
-        v-for="movie in filteredMovies" 
-        :key="movie.id" 
-        :movie="movie" 
-      />
+    <div v-else>
+      <div class="movie-grid grid gap-2 md:gap-4">
+        <MovieCard 
+          v-for="movie in filteredMovies" 
+          :key="movie.id" 
+          :movie="movie" 
+        />
+      </div>
+      
+      <!-- Paginação -->
+      <div v-if="!loading && !error && filteredMovies.length > 0" class="pagination-container">
+        <div class="pagination-info">
+          <span>Página {{ currentPage }} de {{ totalPages }}</span>
+          <span>{{ totalResults }} filmes encontrados</span>
+        </div>
+        
+        <div class="pagination-controls">
+          <button 
+            @click="goToPage(currentPage - 1)" 
+            :disabled="currentPage <= 1 || loadingMore"
+            class="pagination-btn"
+          >
+            <i class="pi pi-chevron-left"></i>
+            Anterior
+          </button>
+          
+          <div class="page-numbers">
+            <button 
+              v-for="pageNum in visiblePages" 
+              :key="pageNum"
+              @click="goToPage(pageNum)"
+              :class="['page-btn', { active: pageNum === currentPage }]"
+              :disabled="loadingMore"
+            >
+              {{ pageNum }}
+            </button>
+          </div>
+          
+          <button 
+            @click="goToPage(currentPage + 1)" 
+            :disabled="currentPage >= totalPages || loadingMore"
+            class="pagination-btn"
+          >
+            Próxima
+            <i class="pi pi-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Loading spinner para carregar mais -->
+      <div v-if="loadingMore" class="loading-more">
+        <div class="loading-spinner">
+          <i class="pi pi-spin pi-spinner"></i>
+          <span>Carregando filmes...</span>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useStore } from 'vuex';
 import MovieCard from '../components/MovieCard.vue';
 import tmdb from '../api/tmdb';
@@ -33,7 +83,11 @@ import tmdb from '../api/tmdb';
 const store = useStore();
 const allMovies = ref([]);
 const loading = ref(true);
+const loadingMore = ref(false);
 const error = ref(null);
+const currentPage = ref(1);
+const totalPages = ref(0);
+const totalResults = ref(0);
 
 const searchQuery = computed(() => store.state.searchQuery);
 
@@ -46,18 +100,68 @@ const filteredMovies = computed(() => {
   );
 });
 
-onMounted(async () => {
+// Calcular páginas visíveis na paginação
+const visiblePages = computed(() => {
+  const pages = [];
+  const maxVisible = 5;
+  let start = Math.max(1, currentPage.value - Math.floor(maxVisible / 2));
+  let end = Math.min(totalPages.value, start + maxVisible - 1);
+  
+  if (end - start + 1 < maxVisible) {
+    start = Math.max(1, end - maxVisible + 1);
+  }
+  
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+  
+  return pages;
+});
+
+const loadMovies = async (pageNum = 1) => {
   try {
-    const response = await tmdb.getPopularMovies();
-    allMovies.value = response.data.results.map(movie => ({
+    const response = await tmdb.getPopularMovies(pageNum);
+    const newMovies = response.data.results.map(movie => ({
       ...movie,
       price: parseFloat((Math.random() * (89.99 - 19.99) + 19.99).toFixed(2))
     }));
+    
+    allMovies.value = newMovies;
+    totalPages.value = response.data.total_pages;
+    totalResults.value = response.data.total_results;
   } catch (err) {
     console.error(err);
     error.value = err;
+  }
+};
+
+const goToPage = async (pageNum) => {
+  if (pageNum < 1 || pageNum > totalPages.value || loadingMore.value) return;
+  
+  loadingMore.value = true;
+  currentPage.value = pageNum;
+  
+  try {
+    await loadMovies(pageNum);
+    // Scroll para o topo
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } finally {
+    loadingMore.value = false;
+  }
+};
+
+onMounted(async () => {
+  try {
+    await loadMovies(1);
   } finally {
     loading.value = false;
+  }
+});
+
+// Reset paginação quando mudar a busca
+watch(searchQuery, () => {
+  if (searchQuery.value) {
+    currentPage.value = 1;
   }
 });
 </script>
@@ -67,6 +171,101 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
 }
+
+.pagination-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 2rem;
+  padding: 1rem;
+  gap: 1rem;
+}
+
+.pagination-info {
+  display: flex;
+  gap: 2rem;
+  color: var(--text-color-secondary);
+  font-size: 0.9rem;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pagination-btn {
+  background-color: var(--surface-card);
+  color: var(--text-color);
+  border: 1px solid var(--surface-border);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background-color: var(--surface-hover);
+  border-color: var(--primary-color);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.page-btn {
+  background-color: var(--surface-card);
+  color: var(--text-color);
+  border: 1px solid var(--surface-border);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 40px;
+}
+
+.page-btn:hover:not(:disabled) {
+  background-color: var(--surface-hover);
+  border-color: var(--primary-color);
+}
+
+.page-btn.active {
+  background-color: var(--primary-color);
+  color: var(--primary-color-text);
+  border-color: var(--primary-color);
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.loading-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-color-secondary);
+}
+
+.loading-spinner i {
+  font-size: 1.2rem;
+}
+
 .skeleton-card {
   background: var(--surface-card);
   border-radius: 8px;
@@ -116,5 +315,22 @@ onMounted(async () => {
   justify-content: center;
   align-items: center;
   height: 50vh;
+}
+
+@media (max-width: 768px) {
+  .pagination-controls {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .page-numbers {
+    order: -1;
+  }
+  
+  .pagination-info {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
 }
 </style> 
