@@ -113,6 +113,7 @@ const filteredMovies = computed(() => {
 
 // Calcular paginação baseada nos filmes filtrados
 const paginationInfo = computed(() => {
+  const moviesPerPage = 21; // 21 filmes por página (múltiplo de 7)
   const filteredCount = filteredMovies.value.length;
   
   if (!searchQuery.value) {
@@ -160,7 +161,7 @@ const visiblePages = computed(() => {
 
 const loadMovies = async (pageNum = 1) => {
   try {
-    const response = await tmdb.getPopularMovies(pageNum);
+    const response = await tmdb.getPopularMovies(pageNum, 21);
     const newMovies = response.data.results.map(movie => ({
       ...movie,
       price: parseFloat((Math.random() * (89.99 - 19.99) + 19.99).toFixed(2))
@@ -214,7 +215,7 @@ const loadMoreMovies = async () => {
   currentPage.value++;
   
   try {
-    const response = await tmdb.getPopularMovies(currentPage.value);
+    const response = await tmdb.getPopularMovies(currentPage.value, 21);
     const newMovies = response.data.results.map(movie => ({
       ...movie,
       price: parseFloat((Math.random() * (89.99 - 19.99) + 19.99).toFixed(2))
@@ -237,7 +238,8 @@ const checkAndLoadMoreForSearch = async () => {
   const filteredCount = filteredMovies.value.length;
   
   // Se temos poucos resultados e ainda há páginas para carregar
-  if (filteredCount < 5 && currentPage.value < totalPages.value) {
+  // Usar 21 como referência (uma página completa)
+  if (filteredCount < 21 && currentPage.value < totalPages.value) {
     await loadMoreMovies();
     
     // Verificar novamente após carregar
@@ -246,7 +248,7 @@ const checkAndLoadMoreForSearch = async () => {
         movie.title.toLowerCase().includes(searchQuery.value.toLowerCase())
       ).length;
       
-      if (newFilteredCount < 5 && currentPage.value < totalPages.value) {
+      if (newFilteredCount < 21 && currentPage.value < totalPages.value) {
         loadMoreMovies();
       }
     }, 300);
