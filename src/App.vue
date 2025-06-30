@@ -34,12 +34,6 @@ const isFavoritesVisible = ref(false)
 
 .app-main {
   flex-grow: 1;
-  padding: 2rem;
-}
-
-@media (min-width: 768px) {
-  .app-main {
-    padding: 2rem;
-  }
+  padding: 1.5rem;
 }
 </style>

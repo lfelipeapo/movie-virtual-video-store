@@ -17,8 +17,8 @@
     <div v-else>
       <div class="movie-grid grid gap-2 md:gap-4">
         <MovieCard 
-          v-for="movie in filteredMovies" 
-          :key="movie.id" 
+          v-for="(movie, index) in filteredMovies" 
+          :key="generateUniqueKey(movie, index)" 
           :movie="movie" 
         />
       </div>
@@ -100,6 +100,11 @@ const currentPage = ref(1);
 const totalPages = ref(0);
 const totalResults = ref(0);
 
+// Função para gerar chave única para cada filme
+const generateUniqueKey = (movie, index) => {
+  return `movie-${movie.id}-${index}-${movie.title?.replace(/[^a-zA-Z0-9]/g, '') || 'unknown'}`;
+};
+
 const searchQuery = computed(() => store.state.searchQuery);
 
 const filteredMovies = computed(() => {
@@ -113,7 +118,6 @@ const filteredMovies = computed(() => {
 
 // Calcular paginação baseada nos filmes filtrados
 const paginationInfo = computed(() => {
-  const moviesPerPage = 21; // 21 filmes por página (múltiplo de 7)
   const filteredCount = filteredMovies.value.length;
   
   if (!searchQuery.value) {
@@ -161,12 +165,13 @@ const visiblePages = computed(() => {
 
 const loadMovies = async (pageNum = 1) => {
   try {
-    const response = await tmdb.getPopularMovies(pageNum, 21);
+    const response = await tmdb.getPopularMovies(pageNum); 
     const newMovies = response.data.results.map(movie => ({
       ...movie,
       price: parseFloat((Math.random() * (89.99 - 19.99) + 19.99).toFixed(2))
     }));
     
+    // Para nova página, substituir completamente os filmes
     allMovies.value = newMovies;
     totalPages.value = response.data.total_pages;
     totalResults.value = response.data.total_results;
@@ -215,14 +220,18 @@ const loadMoreMovies = async () => {
   currentPage.value++;
   
   try {
-    const response = await tmdb.getPopularMovies(currentPage.value, 21);
+    const response = await tmdb.getPopularMovies(currentPage.value); 
     const newMovies = response.data.results.map(movie => ({
       ...movie,
       price: parseFloat((Math.random() * (89.99 - 19.99) + 19.99).toFixed(2))
     }));
     
-    // Adicionar novos filmes aos existentes
-    allMovies.value = [...allMovies.value, ...newMovies];
+    // Filtrar filmes duplicados antes de adicionar
+    const existingIds = new Set(allMovies.value.map(movie => movie.id));
+    const uniqueNewMovies = newMovies.filter(movie => !existingIds.has(movie.id));
+    
+    // Adicionar apenas filmes únicos aos existentes
+    allMovies.value = [...allMovies.value, ...uniqueNewMovies];
   } catch (err) {
     console.error(err);
     error.value = err;
@@ -238,8 +247,7 @@ const checkAndLoadMoreForSearch = async () => {
   const filteredCount = filteredMovies.value.length;
   
   // Se temos poucos resultados e ainda há páginas para carregar
-  // Usar 21 como referência (uma página completa)
-  if (filteredCount < 21 && currentPage.value < totalPages.value) {
+  if (filteredCount < 20 && currentPage.value < totalPages.value) {
     await loadMoreMovies();
     
     // Verificar novamente após carregar
@@ -248,7 +256,7 @@ const checkAndLoadMoreForSearch = async () => {
         movie.title.toLowerCase().includes(searchQuery.value.toLowerCase())
       ).length;
       
-      if (newFilteredCount < 21 && currentPage.value < totalPages.value) {
+      if (newFilteredCount < 20 && currentPage.value < totalPages.value) {
         loadMoreMovies();
       }
     }, 300);
@@ -259,7 +267,21 @@ const checkAndLoadMoreForSearch = async () => {
 <style scoped>
 .movie-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+@media (min-width: 768px) {
+  .movie-grid {
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .movie-grid {
+    gap: 1rem;
+    padding: 0.5rem;
+  }
 }
 
 .pagination-container {
