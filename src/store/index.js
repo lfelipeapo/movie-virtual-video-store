@@ -2,8 +2,8 @@ import { createStore } from 'vuex';
 
 export default createStore({
   state: {
-    cartItems: [],
-    favoriteItems: [],
+    cartItems: JSON.parse(localStorage.getItem('cart')) || [],
+    favoriteItems: JSON.parse(localStorage.getItem('favorites')) || [],
     searchQuery: '',
   },
   mutations: {
@@ -77,5 +77,13 @@ export default createStore({
       return state.cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
     },
   },
-  modules: {}
+  modules: {},
+  plugins: [
+    store => {
+      store.subscribe((mutation, state) => {
+        localStorage.setItem('cart', JSON.stringify(state.cartItems));
+        localStorage.setItem('favorites', JSON.stringify(state.favoriteItems));
+      });
+    }
+  ]
 }); 
